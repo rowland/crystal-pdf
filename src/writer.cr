@@ -68,6 +68,10 @@ module PDF
       end
     end
 
+    def to_s(io : IO) : Nil
+      io << to_s
+    end
+
     # def add_font(family : String, options : Options) # ([]*font.Font, error)
     # end
 
