@@ -1,0 +1,13 @@
+name: crystal-pdf
+version: 0.1.0
+
+authors:
+  - Brent Rowland <rowland@rowlandresearch.com>
+
+crystal: 0.29.0
+
+license: MIT
+
+dependencies:
+  crystal-pdflib:
+    path: ../crystal-pdflib
