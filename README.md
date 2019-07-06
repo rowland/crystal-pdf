@@ -9,7 +9,7 @@ It wraps `crystal-pdflib` for ease of use and to add higher-level functionality.
 
    ```yaml
    dependencies:
-     crystal-pdf:
+     pdf:
        github: rowland/crystal-pdf
    ```
 
@@ -18,7 +18,7 @@ It wraps `crystal-pdflib` for ease of use and to add higher-level functionality.
 ## Usage
 
 ```crystal
-require "crystal-pdf"
+require "pdf"
 ```
 
 The module is called `PDF`, without any "crystal" prefix.

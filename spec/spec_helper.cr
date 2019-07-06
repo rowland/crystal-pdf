@@ -1,3 +1,3 @@
 require "spec"
-require "../src/crystal-pdf"
+require "../src/pdf"
 include PDF

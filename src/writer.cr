@@ -1,4 +1,4 @@
-require "crystal-pdflib"
+require "pdflib"
 require "./color"
 require "./defaults"
 require "./options"

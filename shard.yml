@@ -1,4 +1,4 @@
-name: crystal-pdf
+name: pdf
 version: 0.1.0
 
 authors:
@@ -9,5 +9,5 @@ crystal: 0.29.0
 license: MIT
 
 dependencies:
-  crystal-pdflib:
+  pdflib:
     path: ../crystal-pdflib
