@@ -6,17 +6,25 @@ require "./point"
 
 module PDF
   class Writer
+    @auto_path = true
     @doc : PDFlib::PDF*
-    @page_count = 0
     @in_doc = false
     @in_page = false
+    @in_path = false
+    @in_text = false
+    @loc = {x: 0.0, y: 0.0}
+    @last_loc = {x: 0.0, y: 0.0}
     @options = Options{
       "page_size" => PS_DEFAULT,
     }
+    @page_count = 0
+    @page_width : Float64
+    @page_height : Float64
 
     def initialize(@filename = "")
       @doc = PDFlib.new
       PDFlib.set_option(@doc, "errorpolicy=return")
+      @page_width, @page_height = PAGE_SIZES[PS_DEFAULT]
     end
 
     def open(options = Options.new)
@@ -27,31 +35,41 @@ module PDF
         errmsg = String.new(PDFlib.get_errmsg(@doc))
         raise Exception.new(errmsg)
       end
+      PDFlib.set_option(@doc, "compress=0")
       @in_doc = true
     end
 
     def close
       if @page_count == 0 # empty document needs at least one page
-        open
         open_page
       end
       close_page if @in_page
-      PDFlib.end_document(@doc, "") if @in_doc
-      @in_doc = false
+      if @in_doc
+        PDFlib.end_document(@doc, "")
+        if @filename == ""
+          buf = PDFlib.get_buffer(@doc, out size)
+          @to_s = String.new(buf, size)
+        end
+        @in_doc = false
+      end
     end
 
     def open_page(options = Options.new)
+      open unless @in_doc
       raise Exception.new("Already in page") if @in_page
       @options.merge!(options)
       page_size = @options["page_size"]
-      width, height = PAGE_SIZES[page_size]? || PAGE_SIZES[PS_DEFAULT]
-      PDFlib.begin_page_ext(@doc, width, height, "")
+      @page_width, @page_height = PAGE_SIZES[page_size]? || PAGE_SIZES[PS_DEFAULT]
+      PDFlib.begin_page_ext(@doc, @page_width, @page_height, "")
       @in_page = true
       @page_count += 1
     end
 
     def close_page
       raise Exception.new("Not in page") unless @in_page
+      end_text
+      end_graph
+
       PDFlib.end_page_ext(@doc, "")
       @in_page = false
     end
@@ -59,13 +77,8 @@ module PDF
     @to_s : String | Nil
 
     def to_s : String
-      @to_s ||= begin
-        close
-        buf = PDFlib.get_buffer(@doc, out size)
-        s = String.new(buf, size)
-        PDFlib.delete(@doc)
-        s
-      end
+      close
+      @to_s || ""
     end
 
     def to_s(io : IO) : Nil
@@ -74,6 +87,24 @@ module PDF
 
     # def add_font(family : String, options : Options) # ([]*font.Font, error)
     # end
+
+    private def end_graph
+      end_path if @in_path
+      in_graph = false
+    end
+
+    private def end_path
+      if @auto_path
+        PDFlib.stroke(@doc)
+      end
+      @in_path = false
+    end
+
+    private def end_text
+    end
+
+    private def flush_text
+    end
 
     def font_color : Color
     end
@@ -97,6 +128,32 @@ module PDF
     end
 
     def line_to(x : Float64, y : Float64) : Nil
+      line_to_internal(x, translate(y))
+    end
+
+    private def line_to_internal(x : Float64, y : Float64) : Nil
+      start_graph
+      if @last_loc != @loc
+        if @in_path && @auto_path
+          PDFlib.stroke(@doc)
+        end
+        @in_path = false
+      end
+      # check_set_line_color
+      # check_set_line_width
+      # check_set_line_dash_pattern
+
+      if !@in_path
+        PDFlib.moveto(@doc, @loc[:x], @loc[:y])
+      end
+      move_to_internal(x, y)
+      PDFlib.lineto(@doc, @loc[:x], @loc[:y])
+      @in_path = true
+      @last_loc = @loc
+    end
+
+    def line_to(p : Point) : Nil
+      line_to(p.x, p.y)
     end
 
     def line_width(units : String) : Float64
@@ -105,10 +162,18 @@ module PDF
     def loc : Point
     end
 
-    def move_to(x, y float64) : Nil
+    def move_to(x : Float64, y : Float64) : Nil
+      move_to_internal(x, translate(y))
     end
 
     def move_to(p : Point) : Nil
+      move_to(p.x, p.y)
+    end
+
+    private def move_to_internal(x : Float64, y : Float64) : Nil
+      flush_text
+      @loc = {x: x, y: y}
+      @line_height = 0
     end
 
     def new_page
@@ -124,12 +189,14 @@ module PDF
     end
 
     def page_height : Float64
+      @page_height
     end
 
     def pages_up : Int32
     end
 
     def page_width : Float64
+      @page_width
     end
 
     def print(text : String)
@@ -192,7 +259,19 @@ module PDF
     def set_units(units : String)
     end
 
+    private def start_graph
+      open_page unless @in_page
+      return if @in_graph
+      end_text if @in_text
+      @last_loc = {x: 0, y: 0}
+      @in_graph = true
+    end
+
     def strikeout : Bool
+    end
+
+    private def translate(y : Float64) : Float64
+      @page_height - y
     end
 
     def underline : Bool

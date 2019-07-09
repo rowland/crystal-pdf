@@ -24,5 +24,15 @@ describe PDF do
         File.read(filename).should match /%PDF-1.7/
       end
     end
+
+    context "moves and lines" do
+      filename = "test_moves_and_lines.pdf"
+      it "should move to positions and draw lines" do
+        w = PDF::Writer.new(filename)
+        w.move_to(72, 72)
+        w.line_to(144, 72)
+        w.close
+      end
+    end
   end
 end
