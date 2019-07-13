@@ -12,8 +12,8 @@ module PDF
     @in_page = false
     @in_path = false
     @in_text = false
-    @loc = {x: 0.0, y: 0.0}
-    @last_loc = {x: 0.0, y: 0.0}
+    @loc = {0.0, 0.0}
+    @last_loc = {0.0, 0.0}
     @options = Options{
       "page_size" => PS_DEFAULT,
     }
@@ -97,7 +97,7 @@ module PDF
 
     private def end_graph
       end_path if @in_path
-      in_graph = false
+      @in_graph = false
     end
 
     private def end_path
@@ -134,13 +134,16 @@ module PDF
     def line_spacing : Float64
     end
 
+    def line_to(p : Point) : Nil
+      line_to(p[0], p[1])
+    end
+
     def line_to(x : Float64, y : Float64) : Nil
       line_to_internal(x, translate(y))
     end
 
     private def line_to_internal(x : Float64, y : Float64) : Nil
-      start_graph
-      if @last_loc != @loc
+      unless @last_loc == @loc
         if @in_path && @auto_path
           PDFlib.stroke(@doc)
         end
@@ -150,23 +153,21 @@ module PDF
       # check_set_line_width
       # check_set_line_dash_pattern
 
-      if !@in_path
-        PDFlib.moveto(@doc, @loc[:x], @loc[:y])
+      start_graph unless @in_graph
+      unless @in_path
+        PDFlib.moveto(@doc, @loc[0], @loc[1])
       end
       move_to_internal(x, y)
-      PDFlib.lineto(@doc, @loc[:x], @loc[:y])
+      PDFlib.lineto(@doc, @loc[0], @loc[1])
       @in_path = true
       @last_loc = @loc
-    end
-
-    def line_to(p : Point) : Nil
-      line_to(p.x, p.y)
     end
 
     def line_width(units : String) : Float64
     end
 
     def loc : Point
+      @loc
     end
 
     def move_to(x : Float64, y : Float64) : Nil
@@ -174,12 +175,12 @@ module PDF
     end
 
     def move_to(p : Point) : Nil
-      move_to(p.x, p.y)
+      move_to(p[0], p[1])
     end
 
     private def move_to_internal(x : Float64, y : Float64) : Nil
       flush_text
-      @loc = {x: x, y: y}
+      @loc = {x, y}
       @line_height = 0
     end
 
@@ -267,10 +268,10 @@ module PDF
     end
 
     private def start_graph
+      raise Exception.new("Already in graph") if @in_graph
       open_page unless @in_page
-      return if @in_graph
       end_text if @in_text
-      @last_loc = {x: 0, y: 0}
+      @last_loc = {0.0, 0.0}
       @in_graph = true
     end
 
@@ -285,9 +286,11 @@ module PDF
     end
 
     def x : Float64
+      @loc[0]
     end
 
     def y : Float64
+      @loc[1]
     end
   end
 end

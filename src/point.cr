@@ -1,3 +1,3 @@
 module PDF
-  alias Point = NamedTuple(x: Float64, y: Float64)
+  alias Point = Tuple(Float64, Float64)
 end
