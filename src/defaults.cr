@@ -29,4 +29,6 @@ module PDF
     "B5"     => PS_B5,
     "C5"     => PS_C5,
   }
+
+  UNIT_CONVERSION = {"pt" => 1.0, "in" => 72.0, "cm" => 28.35, "dp" => 0.072}
 end

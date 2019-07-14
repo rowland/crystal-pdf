@@ -20,6 +20,7 @@ module PDF
     @page_count = 0
     @page_width : Float64
     @page_height : Float64
+    @units = "pt"
 
     def initialize(@filename = "")
       @doc = PDFlib.new
@@ -122,6 +123,10 @@ module PDF
     def font_size : Float64
     end
 
+    private def from_points(units : String, measurement : Float64) : Float64
+      measurement / (UNIT_CONVERSION[units]? || 1.0)
+    end
+
     def line_cap_style : LineCapStyle
     end
 
@@ -139,6 +144,7 @@ module PDF
     end
 
     def line_to(x : Float64, y : Float64) : Nil
+      x, y = to_points(units, x), to_points(units, y)
       line_to_internal(x, translate(y))
     end
 
@@ -166,11 +172,8 @@ module PDF
     def line_width(units : String) : Float64
     end
 
-    def loc : Point
-      @loc
-    end
-
     def move_to(x : Float64, y : Float64) : Nil
+      x, y = to_points(units, x), to_points(units, y)
       move_to_internal(x, translate(y))
     end
 
@@ -264,7 +267,9 @@ module PDF
     def set_underline(underline : Bool) : Bool
     end
 
-    def set_units(units : String)
+    def set_units(units : String) : String
+      prev, @units = @units, units
+      prev
     end
 
     private def start_graph
@@ -278,6 +283,10 @@ module PDF
     def strikeout : Bool
     end
 
+    private def to_points(units : String, measurement : Float64) : Float64
+      (UNIT_CONVERSION[units]? || 1.0) * measurement
+    end
+
     private def translate(y : Float64) : Float64
       @page_height - y
     end
@@ -285,12 +294,14 @@ module PDF
     def underline : Bool
     end
 
+    getter units : String
+
     def x : Float64
-      @loc[0]
+      from_points(units, @loc[0])
     end
 
     def y : Float64
-      @loc[1]
+      from_points(units, translate(@loc[1]))
     end
   end
 end
