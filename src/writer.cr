@@ -61,11 +61,11 @@ module PDF
 
       page_size = @options["page_size"]
       @page_width, @page_height = PAGE_SIZES[page_size]? || PAGE_SIZES[PS_DEFAULT]
-      @page_width = @options.get("page_width", @page_width)
-      @page_height = @options.get("page_height", @page_height)
       if @options.get("orientation", "portrait") == "landscape"
         @page_width, @page_height = @page_height, @page_width
       end
+      @page_width = @options.get("page_width", @page_width)
+      @page_height = @options.get("page_height", @page_height)
 
       PDFlib.begin_page_ext(@doc, @page_width, @page_height, "")
       @in_page = true
